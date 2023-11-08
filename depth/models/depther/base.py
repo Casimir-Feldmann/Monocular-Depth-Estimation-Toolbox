@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 import matplotlib
 from depth.utils import colorize
 
+import cv2
+
 
 class BaseDepther(BaseModule, metaclass=ABCMeta):
     """Base class for depther."""
@@ -206,6 +208,8 @@ class BaseDepther(BaseModule, metaclass=ABCMeta):
     def show_result(self,
                     img,
                     result,
+                    gt_depth,
+                    mask,
                     win_name='',
                     show=False,
                     wait_time=0,
@@ -238,8 +242,55 @@ class BaseDepther(BaseModule, metaclass=ABCMeta):
                 np.save(out_file, depth) # only save the value.
         else:
             if out_file is not None:
-                depth = colorize(depth, vmin=self.decode_head.min_depth, vmax=self.decode_head.max_depth)
-                mmcv.imwrite(depth.squeeze(), out_file)
+
+                custom = False
+
+                if custom:
+                    im_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                    abs_diff = np.where(mask > 0, np.abs(depth-gt_depth), 0).squeeze()
+                    depth_color = colorize(depth, vmin=self.decode_head.min_depth, vmax=self.decode_head.max_depth, cmap="viridis").squeeze()
+                    gt_color = colorize(gt_depth, vmin=self.decode_head.min_depth, vmax=self.decode_head.max_depth, cmap="viridis").squeeze()
+
+                    # f, axarr = plt.subplots(2,2)
+                    # axarr[0,0].imshow(img)
+                    # axarr[0,1].imshow(depth_color)
+                    # axarr[1,0].imshow(abs_diff)
+                    # plt.colorbar(im, ax=ax[i, j])
+                    # axarr[1,1].imshow(img)
+
+                    fig, ax = plt.subplots(2, 2)
+                    im = ax[0,0].imshow(im_rgb)
+                    ax[0,0].axis("off")
+                    ax[0,0].set_aspect("equal")
+                    ax[0,0].set_title("RGB")
+                    im = ax[0,1].imshow(abs_diff)
+                    ax[0,1].axis("off")
+                    ax[0,1].set_aspect("equal")
+                    ax[0,1].set_title("Absolute Difference")
+                    plt.colorbar(im, ax=ax[0, 1])
+                    im = ax[1,0].imshow(depth.squeeze(), vmin=0.0, vmax=80.0)
+                    ax[1,0].axis("off")
+                    ax[1,0].set_aspect("equal")
+                    ax[1,0].set_title("Pred Depth")
+                    im = ax[1,1].imshow(gt_depth.squeeze(), vmin=0.0, vmax=80.0)
+                    ax[1,1].axis("off")
+                    ax[1,1].set_aspect("equal")
+                    ax[1,1].set_title("GT Depth")
+                    plt.colorbar(im, ax=ax[1, 1])
+
+                    # plt.subplots_adjust(wspace=0, hspace=0)
+                    
+
+                    # plt.imshow(abs_diff.squeeze())
+                    # plt.colorbar()
+                    plt.savefig(out_file.replace(".png", "debug.png"), dpi=300, bbox_inches='tight')
+                    plt.close()
+
+                    # plt.show()
+
+                else:
+                    depth = colorize(depth, vmin=self.decode_head.min_depth, vmax=self.decode_head.max_depth)
+                    mmcv.imwrite(depth.squeeze(), out_file)
 
         if not (show or out_file):
             warnings.warn('show==False and out_file is not specified, only '

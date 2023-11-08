@@ -21,11 +21,19 @@ class LoadKITTICamIntrinsic(object):
         """
 
         # raw input
-        if 'input' in  results['img_prefix']:
-            date = results['filename'].split('/')[-5]
+        # print(results['img_prefix'])
+        if 'rgb_images' in  results['img_prefix']:
+            # print(results['filename'])
+            # breakpoint()
+            if results['filename'].split('/')[3] == "additional":
+                date = results['filename'].split('/')[4][:10]
+            else:
+                date = results['filename'].split('/')[-5]
             results['cam_intrinsic'] = results['cam_intrinsic_dict'][date]
         # benchmark test
         else:
+            # print(results['img_prefix'])
+            # breakpoint()
             temp = results['filename'].replace('benchmark_test', 'benchmark_test_cam')
             cam_file = temp.replace('png', 'txt')
             results['cam_intrinsic'] = np.loadtxt(cam_file).reshape(3, 3).tolist()

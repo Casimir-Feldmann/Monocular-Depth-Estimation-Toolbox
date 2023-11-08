@@ -10,6 +10,8 @@ from mmcv.engine import collect_results_cpu, collect_results_gpu
 from mmcv.image import tensor2imgs
 from mmcv.runner import get_dist_info
 
+from PIL import Image
+
 def np2tmp(array, temp_file_name=None, tmpdir=None):
     """Save ndarray to local numpy file.
 
@@ -83,6 +85,20 @@ def single_gpu_test(model,
 
     for batch_indices, data in zip(loader_indices, data_loader):
         result = [None]
+        
+        gt_depths = []
+        gt_masks = []
+
+        for i in batch_indices:
+            depth_map = osp.join(dataset.ann_dir,
+                                dataset.img_infos[i]['ann']['depth_map'])
+
+            depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / dataset.depth_scale
+            depth_map_gt = dataset.eval_kb_crop(depth_map_gt)
+            valid_mask = dataset.eval_mask(depth_map_gt)
+
+        gt_depths.append(depth_map_gt)
+        gt_masks.append(valid_mask)
 
         with torch.no_grad():
             result_depth = model(return_loss=False, **data)
@@ -108,7 +124,7 @@ def single_gpu_test(model,
             imgs = tensor2imgs(img_tensor, **img_metas[0]['img_norm_cfg'])
             assert len(imgs) == len(img_metas)
 
-            for img, img_meta in zip(imgs, img_metas):
+            for img, img_meta, gt_depth, mask in zip(imgs, img_metas, gt_depths, gt_masks):
                 h, w, _ = img_meta['img_shape']
                 img_show = img[:h, :w, :]
 
@@ -129,6 +145,8 @@ def single_gpu_test(model,
                 model.module.show_result(
                     img_show,
                     result_depth,
+                    gt_depth,
+                    mask,
                     show=show,
                     out_file=out_file,
                     format_only=format_only)
