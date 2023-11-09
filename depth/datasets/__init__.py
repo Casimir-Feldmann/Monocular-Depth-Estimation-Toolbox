@@ -8,5 +8,5 @@ from .builder import DATASETS, PIPELINES, build_dataloader, build_dataset
 from .nyu_binsformer import NYUBinFormerDataset
 
 __all__ = [
-    'KITTIDataset', 'NYUDataset', 'SUNRGBDDataset', 'CustomDepthDataset', 'CSDataset', 'NYUBinFormerDataset'
+    'KITTIDataset', 'WaymoDataset', 'NYUDataset', 'SUNRGBDDataset', 'CustomDepthDataset', 'CSDataset', 'NYUBinFormerDataset'
 ]
