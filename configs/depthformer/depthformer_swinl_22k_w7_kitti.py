@@ -56,7 +56,7 @@ lr_config = dict(
     by_epoch=False) # test add by_epoch false
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # runtime settings
-runner = dict(type='IterBasedRunner', max_iters=1600 * 24)
+runner = dict(type='IterBasedRunner', max_iters=1600 * 30)
 checkpoint_config = dict(by_epoch=False, max_keep_ckpts=2, interval=1600)
 evaluation = dict(by_epoch=False, 
                   start=0,

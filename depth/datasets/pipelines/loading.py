@@ -29,14 +29,14 @@ class LoadKITTICamIntrinsic(object):
                 date = results['filename'].split('/')[4][:10]
             else:
                 date = results['filename'].split('/')[-5]
-            results['cam_intrinsic'] = results['cam_intrinsic_dict'][date]
+            # results['cam_intrinsic'] = results['cam_intrinsic_dict'][date]
         # benchmark test
         else:
             # print(results['img_prefix'])
             # breakpoint()
             temp = results['filename'].replace('benchmark_test', 'benchmark_test_cam')
             cam_file = temp.replace('png', 'txt')
-            results['cam_intrinsic'] = np.loadtxt(cam_file).reshape(3, 3).tolist()
+            # results['cam_intrinsic'] = np.loadtxt(cam_file).reshape(3, 3).tolist()
         
         return results
 

@@ -1,6 +1,6 @@
 # dataset settings
 dataset_type = 'KITTIDataset'
-data_root = 'data/kitti'
+data_root = None
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
 # img_norm_cfg = dict(
@@ -21,8 +21,7 @@ train_pipeline = [
          keys=['img', 'depth_gt'],
          meta_keys=('filename', 'ori_filename', 'ori_shape',
                     'img_shape', 'pad_shape', 'scale_factor', 
-                    'flip', 'flip_direction', 'img_norm_cfg',
-                    'cam_intrinsic')),
+                    'flip', 'flip_direction', 'img_norm_cfg')),
 ]
 test_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -41,8 +40,7 @@ test_pipeline = [
                  keys=['img'],
                  meta_keys=('filename', 'ori_filename', 'ori_shape',
                             'img_shape', 'pad_shape', 'scale_factor', 
-                            'flip', 'flip_direction', 'img_norm_cfg',
-                            'cam_intrinsic')),
+                            'flip', 'flip_direction', 'img_norm_cfg')),
         ])
 ]
 data = dict(
@@ -54,7 +52,7 @@ data = dict(
         img_dir='rgb_images',
         ann_dir='depth_mde',
         depth_scale=256,
-        split='kitti_eigen_novel_train.txt', #'kitti_eigen_train.txt' kitti_eigen_novel_train.txt
+        split='/cluster/project/infk/courses/252-0579-00L/group26/sniall/Monocular-Depth-Estimation-Toolbox/splits/kitti_eigen_angled_train_files_with_gt.txt', #'kitti_eigen_train.txt' kitti_eigen_novel_train.txt
         pipeline=train_pipeline,
         garg_crop=True,
         eigen_crop=False,
@@ -66,7 +64,7 @@ data = dict(
         img_dir='rgb_images',
         ann_dir='depth_mde',
         depth_scale=256,
-        split='kitti_eigen_test.txt',
+        split='/cluster/project/infk/courses/252-0579-00L/group26/sniall/Monocular-Depth-Estimation-Toolbox/splits/kitti_eigen_test.txt',
         pipeline=test_pipeline,
         garg_crop=True,
         eigen_crop=False,
@@ -77,10 +75,10 @@ data = dict(
         data_root=data_root,
         img_dir='rgb_images',
         ann_dir='depth_mde',
-        depth_scale=256,
-        split='kitti_eigen_test.txt',
+        depth_scale=255,
+        split='/cluster/project/infk/courses/252-0579-00L/group26/sniall/Monocular-Depth-Estimation-Toolbox/splits/waymo_angled_test_files_with_gt.txt',
         pipeline=test_pipeline,
-        garg_crop=True,
+        garg_crop=False,
         eigen_crop=False,
         min_depth=1e-3,
         max_depth=80))
