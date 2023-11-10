@@ -18,6 +18,7 @@ from depth.datasets.pipelines import Compose
 from depth.ops import resize
 
 from PIL import Image
+import cv2
 
 import torch
 
@@ -199,11 +200,34 @@ class WaymoDataset(Dataset):
         valid_mask = np.logical_and(depth_gt > self.min_depth, depth_gt < self.max_depth)
         valid_mask = np.expand_dims(valid_mask, axis=0)
         return valid_mask
+
+    def maxpool2d(self, A, kernel_size, stride):
+        '''
+        2D Pooling
+
+        Parameters:
+            A: input 2D array
+            kernel_size: int, the size of the window over which we take pool
+            stride: int, the stride of the window
+        '''
+
+        # Window view of A
+        output_shape = ((A.shape[0] - kernel_size) // stride + 1,
+                        (A.shape[1] - kernel_size) // stride + 1)
+        
+        shape_w = (output_shape[0], output_shape[1], kernel_size, kernel_size)
+        strides_w = (stride*A.strides[0], stride*A.strides[1], A.strides[0], A.strides[1])
+        
+        A_w = np.lib.stride_tricks.as_strided(A, shape_w, strides_w)
+
+        # Return the result of pooling
+        return A_w.max(axis=(2, 3))
     
     def downsample_sparse(self, depth, size):
         indices = np.nonzero(depth[...])
 
-        new_indices = np.floor(indices[0] * size[0] / depth.shape[0]).astype(np.uint32), np.floor(indices[1] * size[1] / depth.shape[1]).astype(np.uint32)
+        new_indices = np.floor(indices[0] * size[0] / depth.shape[0]).astype(np.uint32), \
+                      np.floor(indices[1] * size[1] / depth.shape[1]).astype(np.uint32)
 
         new_depth = np.zeros(size)
         new_depth[new_indices] = depth[indices]
@@ -228,15 +252,21 @@ class WaymoDataset(Dataset):
 
         pre_eval_results = []
         pre_eval_preds = []
+        pre_eval_gts = []
+        pre_eval_masks = []
 
         for i, (pred, index) in enumerate(zip(preds, indices)):
             depth_map = osp.join(self.ann_dir,
                                self.img_infos[index]['ann']['depth_map'])
 
-            depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / self.depth_scale
-            depth_map_gt = self.downsample_sparse(depth_map_gt, (376, 564))
+            depth_map_gt = cv2.imread(depth_map).astype(np.float32) / self.depth_scale
+            # depth_map_gt = self.downsample_sparse(depth_map_gt, (376, 564))
             depth_map_gt = depth_map_gt[None, ...]
+            depth_map_gt = self.maxpool2d(depth_map_gt, 3, 3)
             valid_mask = np.logical_and(depth_map_gt > self.min_depth, depth_map_gt < self.max_depth)
+
+            pre_eval_gts.append(depth_map_gt)
+            pre_eval_masks.append(valid_mask)
             
             eval = metrics(depth_map_gt[valid_mask], 
                            pred[valid_mask], 
@@ -248,7 +278,7 @@ class WaymoDataset(Dataset):
             # save prediction results
             pre_eval_preds.append(pred)
 
-        return pre_eval_results, pre_eval_preds
+        return pre_eval_results, pre_eval_preds, pre_eval_gts, pre_eval_masks
 
     def evaluate(self, results, metric='eigen', logger=None, **kwargs):
         """Evaluate the dataset.
