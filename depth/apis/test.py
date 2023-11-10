@@ -83,7 +83,7 @@ def single_gpu_test(model,
     # we use batch_sampler to get correct data idx
     loader_indices = data_loader.batch_sampler
 
-    for batch_indices, data in zip(loader_indices, data_loader):
+    for i, (batch_indices, data) in enumerate(zip(loader_indices, data_loader)):
         result = [None]
         
         gt_depths = []
@@ -119,7 +119,7 @@ def single_gpu_test(model,
         # if pre_eval, result will be pre_eval res for final aggregation
         results.extend(result)
 
-        if show or out_dir:
+        if show or out_dir and i % 100 == 0:
             img_tensor = data['img'][0]
             img_metas = data['img_metas'][0].data[0]
             imgs = tensor2imgs(img_tensor, **img_metas[0]['img_norm_cfg'])
