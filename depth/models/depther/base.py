@@ -244,6 +244,10 @@ class BaseDepther(BaseModule, metaclass=ABCMeta):
             if out_file is not None:
 
                 custom = False
+                custom_niall = True
+
+                if custom_niall:
+                    mmcv.imwrite(depth.squeeze(), out_file)
 
                 if custom:
                     im_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
