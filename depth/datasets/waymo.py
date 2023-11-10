@@ -37,8 +37,6 @@ class WaymoDataset(Dataset):
         data_root (str, optional): Data root for img_dir/ann_dir. Default: None.
         test_mode (bool): If test_mode=True, gt wouldn't be loaded.
         depth_scale=256: Default KITTI pre-process. divide 256 to get gt measured in meters (m)
-        garg_crop=True: Following Adabins, use grag crop to eval results.
-        eigen_crop=False: Another cropping setting.
         min_depth=1e-3: Default min depth value.
         max_depth=80: Default max depth value.
     """
@@ -195,6 +193,23 @@ class WaymoDataset(Dataset):
         valid_mask = np.logical_and(depth_gt > self.min_depth, depth_gt < self.max_depth)
         return valid_mask
 
+    def eval_mask(self, depth_gt):
+        """Following Adabins, Do grag_crop or eigen_crop for testing"""
+        depth_gt = np.squeeze(depth_gt)
+        valid_mask = np.logical_and(depth_gt > self.min_depth, depth_gt < self.max_depth)
+        valid_mask = np.expand_dims(valid_mask, axis=0)
+        return valid_mask
+    
+    def downsample_sparse(self, depth, size):
+        indices = np.nonzero(depth[...])
+
+        new_indices = np.floor(indices[0] * size[0] / depth.shape[0]).astype(np.uint32), np.floor(indices[1] * size[1] / depth.shape[1]).astype(np.uint32)
+
+        new_depth = np.zeros(size)
+        new_depth[new_indices] = depth[indices]
+
+        return new_depth
+
     def pre_eval(self, preds, indices):
         """Collect eval result from each iteration.
         Args:
@@ -219,6 +234,7 @@ class WaymoDataset(Dataset):
                                self.img_infos[index]['ann']['depth_map'])
 
             depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / self.depth_scale
+            depth_map_gt = self.downsample_sparse(depth_map_gt, (376, 564))
             depth_map_gt = depth_map_gt[None, ...]
             valid_mask = np.logical_and(depth_map_gt > self.min_depth, depth_map_gt < self.max_depth)
             

@@ -4,7 +4,7 @@ from .formating import (Collect, ImageToTensor, ToDataContainer, ToTensor,
                         Transpose, to_tensor)
 from .test_time_aug import MultiScaleFlipAug
 
-from .loading import DepthLoadAnnotations, DisparityLoadAnnotations, LoadImageFromFile, LoadKITTICamIntrinsic
+from .loading import ScaleWaymoToKITTI, DepthLoadAnnotations, DisparityLoadAnnotations, LoadImageFromFile, LoadKITTICamIntrinsic
 from .transforms import KBCrop, RandomRotate, RandomFlip, RandomCrop, NYUCrop, Resize, Normalize
 from .formating import DefaultFormatBundle
 
