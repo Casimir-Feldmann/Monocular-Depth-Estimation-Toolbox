@@ -76,6 +76,10 @@ class WaymoDataset(Dataset):
         # load annotations
         self.img_infos = self.load_annotations(self.img_dir, self.ann_dir, self.split)
         
+        # load filenames of images to be visualised
+        with open('/cluster/project/infk/courses/252-0579-00L/group26/sniall/Monocular-Depth-Estimation-Toolbox/waymo_angled_vis.txt') as f:
+            self.vis_files = [line.rstrip() for line in f]
+            # print(self.vis_files)
 
     def __len__(self):
         """Total number of samples of data."""
@@ -194,7 +198,10 @@ class WaymoDataset(Dataset):
         return depth_map_gt
     
     def get_unique_identifier(self, path):
-        return path.split("/")[-2] + "_" + path.split("/")[-1]
+        return path.split("/")[-3] + "_" + path.split("/")[-1]
+    
+    def is_visualize(self, identifier):
+        return (identifier in self.vis_files)
     
     def eval_mask(self, depth_gt):
         # depth_gt = np.squeeze(depth_gt)

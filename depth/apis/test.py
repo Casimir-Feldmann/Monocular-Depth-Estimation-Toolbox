@@ -117,13 +117,16 @@ def single_gpu_test(model,
         # if pre_eval, result will be pre_eval res for final aggregation
         results.extend(result)
 
-        if show or out_dir and i % 100 == 0:
+        if show or out_dir:
             img_tensor = data['img'][0]
             img_metas = data['img_metas'][0].data[0]
             imgs = tensor2imgs(img_tensor, **img_metas[0]['img_norm_cfg'])
             assert len(imgs) == len(img_metas)
 
             for img, img_meta, gt_depth, mask in zip(imgs, img_metas, gt_depths, gt_masks):
+                if not dataset.is_visualize(dataset.get_unique_identifier(img_meta['ori_filename'])):
+                    continue
+
                 h, w, _ = img_meta['img_shape']
                 img_show = img[:h, :w, :]
 
@@ -133,11 +136,11 @@ def single_gpu_test(model,
                 if out_dir:
                     mmcv.mkdir_or_exist(out_dir)
                     if format_only:
-                        filename = img_meta['ori_filename'][:-4]
+                        filename = dataset.get_unique_identifier(img_meta['ori_filename'])[:-4]
                         filename = filename + '.npy'
                         out_file = osp.join(out_dir, filename)
                     else:
-                        out_file = osp.join(out_dir, dataset.get_unique_identifier(filename))
+                        out_file = osp.join(out_dir, dataset.get_unique_identifier(img_meta['ori_filename']))
                 else:
                     out_file = None
 

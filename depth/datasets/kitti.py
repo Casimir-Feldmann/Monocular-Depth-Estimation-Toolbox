@@ -232,6 +232,9 @@ class KITTIDataset(Dataset):
     def get_unique_identifier(self, path):
         return path.split("/")[-4] + "_" + path.split("/")[-3] + "_" + path.split("/")[-1]
     
+    def is_visualize(self, identifier):
+        return True
+
     def eval_kb_crop(self, depth_gt):
         """Following Adabins, Do kb crop for testing"""
         height = depth_gt.shape[0]

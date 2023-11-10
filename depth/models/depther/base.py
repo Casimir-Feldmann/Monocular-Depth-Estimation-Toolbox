@@ -249,7 +249,7 @@ class BaseDepther(BaseModule, metaclass=ABCMeta):
                 if custom_niall:
                     mmcv.imwrite(depth.squeeze(), out_file)
 
-                if custom:
+                elif custom:
                     im_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
                     abs_diff = np.where(mask > 0, np.abs(depth-gt_depth), 0).squeeze()
                     depth_color = colorize(depth, vmin=self.decode_head.min_depth, vmax=self.decode_head.max_depth, cmap="viridis").squeeze()
