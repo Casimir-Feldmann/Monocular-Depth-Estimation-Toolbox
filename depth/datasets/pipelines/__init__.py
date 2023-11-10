@@ -12,6 +12,6 @@ __all__ = [
     'Compose', 'Collect', 'ImageToTensor', 'ToDataContainer', 'ToTensor',
     'Transpose', 'to_tensor', 'MultiScaleFlipAug',
 
-    'DepthLoadAnnotations', 'KBCrop', 'RandomRotate', 'RandomFlip', 'RandomCrop', 'DefaultFormatBundle',
+    'ScaleWaymoToKITTI', 'DepthLoadAnnotations', 'KBCrop', 'RandomRotate', 'RandomFlip', 'RandomCrop', 'DefaultFormatBundle',
     'NYUCrop', 'DisparityLoadAnnotations', 'Resize', 'LoadImageFromFile', 'Normalize', 'LoadKITTICamIntrinsic'
 ]
