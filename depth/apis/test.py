@@ -93,9 +93,7 @@ def single_gpu_test(model,
             depth_map = osp.join(dataset.ann_dir,
                                 dataset.img_infos[i]['ann']['depth_map'])
 
-            depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / dataset.depth_scale
-            depth_map_gt = dataset.downsample_sparse(depth_map_gt, (376, 564))
-            # depth_map_gt = dataset.eval_kb_crop(depth_map_gt)
+            depth_map_gt = dataset.get_gt_depth_map(depth_map)
             valid_mask = dataset.eval_mask(depth_map_gt)
 
         gt_depths.append(depth_map_gt)

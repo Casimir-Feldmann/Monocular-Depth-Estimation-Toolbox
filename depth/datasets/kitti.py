@@ -224,6 +224,11 @@ class KITTIDataset(Dataset):
             depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / self.depth_scale
             yield depth_map_gt
     
+    def get_gt_depth_map(self, path):
+        depth_map_gt = np.asarray(Image.open(path), dtype=np.float32) / self.depth_scale
+        depth_map_gt = self.eval_kb_crop(depth_map_gt)
+        return depth_map_gt
+    
     def eval_kb_crop(self, depth_gt):
         """Following Adabins, Do kb crop for testing"""
         height = depth_gt.shape[0]
