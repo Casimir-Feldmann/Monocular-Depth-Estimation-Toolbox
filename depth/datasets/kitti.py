@@ -228,6 +228,9 @@ class KITTIDataset(Dataset):
         depth_map_gt = np.asarray(Image.open(path), dtype=np.float32) / self.depth_scale
         depth_map_gt = self.eval_kb_crop(depth_map_gt)
         return depth_map_gt
+
+    def get_unique_identifier(self, path):
+        return path.split("/")[-4] + "_" + path.split("/")[-3] + "_" + path.split("/")[-1]
     
     def eval_kb_crop(self, depth_gt):
         """Following Adabins, Do kb crop for testing"""

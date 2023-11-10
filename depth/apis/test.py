@@ -137,7 +137,7 @@ def single_gpu_test(model,
                         filename = filename + '.npy'
                         out_file = osp.join(out_dir, filename)
                     else:
-                        out_file = osp.join(out_dir, replace_str(img_meta['ori_filename'].split("/")[-1]))
+                        out_file = osp.join(out_dir, dataset.get_unique_identifier(filename))
                 else:
                     out_file = None
 

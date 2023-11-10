@@ -193,6 +193,9 @@ class WaymoDataset(Dataset):
         depth_map_gt = self.downsample_sparse(depth_map_gt, (376, 564))
         return depth_map_gt
     
+    def get_unique_identifier(self, path):
+        return path.split("/")[-2] + "_" + path.split("/")[-1]
+    
     def eval_mask(self, depth_gt):
         # depth_gt = np.squeeze(depth_gt)
         valid_mask = np.logical_and(depth_gt > self.min_depth, depth_gt < self.max_depth)
