@@ -84,6 +84,21 @@ def single_gpu_test(model,
     loader_indices = data_loader.batch_sampler
 
     for i, (batch_indices, data) in enumerate(zip(loader_indices, data_loader)):
+        result = [None]
+        
+        gt_depths = []
+        gt_masks = []
+
+        for i in batch_indices:
+            depth_map = osp.join(dataset.ann_dir,
+                                dataset.img_infos[i]['ann']['depth_map'])
+
+            depth_map_gt = dataset.get_gt_depth_map(depth_map)
+            valid_mask = dataset.eval_mask(depth_map_gt)
+
+        gt_depths.append(depth_map_gt)
+        gt_masks.append(valid_mask)
+
         with torch.no_grad():
             result_depth = model(return_loss=False, **data)
 

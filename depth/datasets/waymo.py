@@ -188,8 +188,12 @@ class WaymoDataset(Dataset):
             depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / self.depth_scale
             yield depth_map_gt
     
+    def get_gt_depth_map(self, path):
+        depth_map_gt = np.asarray(Image.open(path), dtype=np.float32) / self.depth_scale
+        depth_map_gt = self.downsample_sparse(depth_map_gt, (376, 564))
+        return depth_map_gt
+    
     def eval_mask(self, depth_gt):
-        """Following Adabins, Do grag_crop or eigen_crop for testing"""
         # depth_gt = np.squeeze(depth_gt)
         valid_mask = np.logical_and(depth_gt > self.min_depth, depth_gt < self.max_depth)
         return valid_mask
