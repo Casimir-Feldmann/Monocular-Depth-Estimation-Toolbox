@@ -84,23 +84,6 @@ def single_gpu_test(model,
     loader_indices = data_loader.batch_sampler
 
     for i, (batch_indices, data) in enumerate(zip(loader_indices, data_loader)):
-        result = [None]
-        
-        gt_depths = []
-        gt_masks = []
-
-        for i in batch_indices:
-            depth_map = osp.join(dataset.ann_dir,
-                                dataset.img_infos[i]['ann']['depth_map'])
-
-            depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / dataset.depth_scale
-            depth_map_gt = dataset.downsample_sparse(depth_map_gt, (376, 564))
-            # depth_map_gt = dataset.eval_kb_crop(depth_map_gt)
-            valid_mask = dataset.eval_mask(depth_map_gt)
-
-        gt_depths.append(depth_map_gt)
-        gt_masks.append(valid_mask)
-
         with torch.no_grad():
             result_depth = model(return_loss=False, **data)
 
@@ -112,8 +95,8 @@ def single_gpu_test(model,
             # TODO: adapt samples_per_gpu > 1.
             # only samples_per_gpu=1 valid now
             # eval metric, result depth.
-            result, result_depth = dataset.pre_eval(result_depth,
-                                                    indices=batch_indices)
+            result, result_depth, gt_depths, gt_masks = dataset.pre_eval(result_depth,
+                                                                         indices=batch_indices)
 
         # if format only, result will be formated output
         # if pre_eval, result will be pre_eval res for final aggregation

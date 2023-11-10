@@ -271,6 +271,8 @@ class KITTIDataset(Dataset):
 
         pre_eval_results = []
         pre_eval_preds = []
+        pre_eval_gts = []
+        pre_eval_masks = []
 
         for i, (pred, index) in enumerate(zip(preds, indices)):
             depth_map = osp.join(self.ann_dir,
@@ -279,6 +281,9 @@ class KITTIDataset(Dataset):
             depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / self.depth_scale
             depth_map_gt = self.eval_kb_crop(depth_map_gt)
             valid_mask = self.eval_mask(depth_map_gt)
+
+            pre_eval_gts.append(depth_map_gt)
+            pre_eval_masks.append(valid_mask)
             
             eval = metrics(depth_map_gt[valid_mask], 
                            pred[valid_mask], 
@@ -290,7 +295,7 @@ class KITTIDataset(Dataset):
             # save prediction results
             pre_eval_preds.append(pred)
 
-        return pre_eval_results, pre_eval_preds
+        return pre_eval_results, pre_eval_preds, pre_eval_gts, pre_eval_masks
 
     def evaluate(self, results, metric='eigen', logger=None, **kwargs):
         """Evaluate the dataset.
