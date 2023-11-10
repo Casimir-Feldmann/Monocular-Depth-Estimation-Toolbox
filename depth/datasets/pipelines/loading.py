@@ -1,6 +1,7 @@
 import json
 import mmcv
 import numpy as np
+import cv2
 import os.path as osp
 from PIL import Image
 from ..builder import PIPELINES
@@ -44,7 +45,11 @@ class LoadKITTICamIntrinsic(object):
     def __repr__(self):
         repr_str = self.__class__.__name__
         return repr_str
-
+    
+class ScaleWaymoToKITTI(object):
+    def __call__(self, results):
+        results['img'] = cv2.resize(results["img"], (564, 376))
+        return results
 
 @PIPELINES.register_module()
 class DepthLoadAnnotations(object):

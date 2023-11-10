@@ -24,20 +24,7 @@ import torch
 
 @DATASETS.register_module()
 class KITTIDataset(Dataset):
-    """KITTI dataset for depth estimation. An example of file structure
-    is as followed.
-    .. code-block:: none
-        ├── data
-        │   ├── KITTI
-        │   │   ├── kitti_eigen_train.txt
-        │   │   ├── kitti_eigen_test.txt
-        │   │   ├── input (RGB, img_dir)
-        │   │   │   ├── date_1
-        │   │   │   ├── date_2
-        │   │   │   |   ...
-        │   │   │   |   ...
-        |   │   ├── gt_depth (ann_dir)
-        │   │   │   ├── date_drive_number_sync
+    """Waymo dataset for depth estimation
     split file format:
     input_image: 2011_09_26/2011_09_26_drive_0002_sync/image_02/data/0000000069.png 
     gt_depth:    2011_09_26_drive_0002_sync/proj_depth/groundtruth/image_02/0000000069.png 
@@ -50,8 +37,6 @@ class KITTIDataset(Dataset):
         data_root (str, optional): Data root for img_dir/ann_dir. Default: None.
         test_mode (bool): If test_mode=True, gt wouldn't be loaded.
         depth_scale=256: Default KITTI pre-process. divide 256 to get gt measured in meters (m)
-        garg_crop=True: Following Adabins, use grag crop to eval results.
-        eigen_crop=False: Another cropping setting.
         min_depth=1e-3: Default min depth value.
         max_depth=80: Default max depth value.
     """
@@ -202,6 +187,23 @@ class KITTIDataset(Dataset):
             depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / self.depth_scale
             yield depth_map_gt
 
+    def eval_mask(self, depth_gt):
+        """Following Adabins, Do grag_crop or eigen_crop for testing"""
+        depth_gt = np.squeeze(depth_gt)
+        valid_mask = np.logical_and(depth_gt > self.min_depth, depth_gt < self.max_depth)
+        valid_mask = np.expand_dims(valid_mask, axis=0)
+        return valid_mask
+    
+    def downsample_sparse(self, depth, size):
+        indices = np.nonzero(depth[...])
+
+        new_indices = np.floor(indices[0] * size[0] / depth.shape[0]).astype(np.uint32), np.floor(indices[1] * size[1] / depth.shape[1]).astype(np.uint32)
+
+        new_depth = np.zeros(size)
+        new_depth[new_indices] = depth[indices]
+
+        return new_depth
+
     def pre_eval(self, preds, indices):
         """Collect eval result from each iteration.
         Args:
@@ -226,6 +228,7 @@ class KITTIDataset(Dataset):
                                self.img_infos[index]['ann']['depth_map'])
 
             depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / self.depth_scale
+            depth_map_gt = self.downsample_sparse(depth_map_gt, (376, 564))
             valid_mask = np.logical_and(np.squeeze(depth_map_gt) > self.min_depth, np.squeeze(depth_map_gt) < self.max_depth)
             
             eval = metrics(depth_map_gt[valid_mask], 

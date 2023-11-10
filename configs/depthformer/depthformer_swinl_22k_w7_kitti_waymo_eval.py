@@ -78,7 +78,7 @@ val_pipeline = [
 ]
 test_pipeline = [
     dict(type='LoadImageFromFile'),
-    # dict(type='ScaleWaymoToKITTI'),
+    dict(type='ScaleWaymoToKITTI'),
     dict(
         type='MultiScaleFlipAug',
         img_scale=(564, 376),
