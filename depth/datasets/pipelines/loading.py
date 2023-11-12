@@ -50,8 +50,8 @@ class LoadKITTICamIntrinsic(object):
 class ScaleWaymoToKITTI(object):
     def __call__(self, results):
         img = results["img"]
-        # results['img'] = cv2.resize(results["img"], (564, 376))
-        results['img'] = cv2.resize(results["img"], (img.shape[1] // 3, img.shape[0] // 3))
+        results['img'] = cv2.resize(results["img"], (564, 376))
+        # results['img'] = cv2.resize(results["img"], (img.shape[1] // 3, img.shape[0] // 3))
         return results
 
 @PIPELINES.register_module()

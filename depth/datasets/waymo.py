@@ -273,10 +273,11 @@ class WaymoDataset(Dataset):
             depth_map = osp.join(self.ann_dir,
                                self.img_infos[index]['ann']['depth_map'])
 
-            depth_map_gt = cv2.imread(depth_map).astype(np.float32) / self.depth_scale
-            # depth_map_gt = self.downsample_sparse(depth_map_gt, (376, 564))
+            depth_map_gt = cv2.imread(depth_map)
+            depth_map_gt = self.downsample_sparse(depth_map_gt, (376, 564))
+            # depth_map_gt = self.downsample_sparse(depth_map_gt, (1280 // 2, 1920 // 2))
+            # depth_map_gt = self.maxpool2d(depth_map_gt, 3, 3)
             depth_map_gt = depth_map_gt[None, ...]
-            depth_map_gt = self.maxpool2d(depth_map_gt, 3, 3)
             valid_mask = np.logical_and(depth_map_gt > self.min_depth, depth_map_gt < self.max_depth)
 
             pre_eval_gts.append(depth_map_gt)

@@ -1,10 +1,10 @@
 _base_ = [
-    '../_base_/models/dpt.py', '../_base_/datasets/kitti.py',
+    '../_base_/models/dpt.py',
     '../_base_/default_runtime.py', '../_base_/schedules/schedule_24x.py'
 ]
 
 model = dict(
-    pretrained='nfs/checkpoints/jx_vit_base_p16_224-80ecf9dd.pth',
+    pretrained='pretrain/jx_vit_base_p16_224-80ecf9dd.pth',
     decode_head=dict(
         min_depth=1e-3,
         max_depth=80,
@@ -43,6 +43,11 @@ momentum_config = dict(
 
 evaluation = dict(interval=1)
 
+# dataset settings
+dataset_type_train = 'KITTIDataset'
+dataset_type_val = 'KITTIDataset'
+dataset_type_test = 'WaymoDataset'
+data_root = 'data/kitti'
 img_norm_cfg = dict(
     mean=[127.5, 127.5, 127.5], std=[127.5, 127.5, 127.5], to_rgb=True)
 crop_size= (352, 704)
@@ -61,10 +66,9 @@ train_pipeline = [
          keys=['img', 'depth_gt'],
          meta_keys=('filename', 'ori_filename', 'ori_shape',
                     'img_shape', 'pad_shape', 'scale_factor', 
-                    'flip', 'flip_direction', 'img_norm_cfg',
-                    'cam_intrinsic')),
+                    'flip', 'flip_direction', 'img_norm_cfg')),
 ]
-test_pipeline = [
+val_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='LoadKITTICamIntrinsic'),
     dict(type='KBCrop', depth=False),
@@ -81,19 +85,63 @@ test_pipeline = [
                  keys=['img'],
                  meta_keys=('filename', 'ori_filename', 'ori_shape',
                             'img_shape', 'pad_shape', 'scale_factor', 
-                            'flip', 'flip_direction', 'img_norm_cfg',
-                            'cam_intrinsic')),
+                            'flip', 'flip_direction', 'img_norm_cfg')),
         ])
 ]
-
-# By default, models are trained on 8 GPUs with 2 images per GPU
+test_pipeline = [
+    dict(type='LoadImageFromFile'),
+    dict(type='ScaleWaymoToKITTI'),
+    dict(
+        type='MultiScaleFlipAug',
+        img_scale=(564, 376),
+        flip=True,
+        flip_direction='horizontal',
+        transforms=[
+            dict(type='RandomFlip', direction='horizontal'),
+            dict(type='Normalize', **img_norm_cfg),
+            dict(type='ImageToTensor', keys=['img']),
+            dict(type='Collect', 
+                 keys=['img'],
+                 meta_keys=('filename', 'ori_filename', 'ori_shape',
+                            'img_shape', 'pad_shape', 'scale_factor', 
+                            'flip', 'flip_direction', 'img_norm_cfg')),
+        ])
+]
 data = dict(
-    samples_per_gpu=2,
-    workers_per_gpu=2,
+    samples_per_gpu=8,
+    workers_per_gpu=8,
     train=dict(
-        pipeline=train_pipeline,),
+        type=dataset_type_train,
+        data_root=None,
+        img_dir='rgb_images',
+        ann_dir='depth_mde',
+        depth_scale=256,
+        split='/cluster/project/infk/courses/252-0579-00L/group26/sniall/Monocular-Depth-Estimation-Toolbox/splits/kitti_eigen_train.txt', #'kitti_eigen_train.txt' kitti_eigen_novel_train.txt
+        pipeline=train_pipeline,
+        garg_crop=True,
+        eigen_crop=False,
+        min_depth=1e-3,
+        max_depth=80),
     val=dict(
-        pipeline=test_pipeline),
+        type=dataset_type_val,
+        data_root=None,
+        img_dir='rgb_images',
+        ann_dir='depth_mde',
+        depth_scale=256,
+        split='/cluster/project/infk/courses/252-0579-00L/group26/sniall/Monocular-Depth-Estimation-Toolbox/splits/kitti_eigen_test.txt',
+        pipeline=val_pipeline,
+        garg_crop=True,
+        eigen_crop=False,
+        min_depth=1e-3,
+        max_depth=80),
     test=dict(
-        pipeline=test_pipeline,))
+        type=dataset_type_test,
+        data_root=None,
+        img_dir='rgb_images',
+        ann_dir='depth_mde',
+        depth_scale=255,
+        split='/cluster/project/infk/courses/252-0579-00L/group26/sniall/Monocular-Depth-Estimation-Toolbox/splits/waymo_angled_test_files_with_gt_short.txt',
+        pipeline=test_pipeline,
+        min_depth=1e-3,
+        max_depth=80))
 
