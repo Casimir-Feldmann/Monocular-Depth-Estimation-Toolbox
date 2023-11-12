@@ -40,9 +40,13 @@ class BinsChamferLoss(nn.Module):
 
     def forward(self,
                 input,
-                target):
+                target,
+                mask=None):
         """Forward function."""
         
+        if mask is not None:
+            input = input[mask]
+            target = target[mask]
         chamfer_loss = self.bins_chamfer_loss(input, target)
         chamfer_loss = self.loss_weight * chamfer_loss
         return chamfer_loss

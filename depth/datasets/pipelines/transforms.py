@@ -115,6 +115,29 @@ class KBCrop(object):
         top_margin = int(height - self.height)
         left_margin = int((width - self.width) / 2)
 
+        # Images from the interpolated post-sweep renders had wrong dims
+        if top_margin < 0 or left_margin < 0:
+            top_padding = max(0, -top_margin)
+            side_padding = max(0, -(width - self.width))
+            if side_padding % 2 == 0 and side_padding != 0:
+                side_padding = (side_padding // 2, side_padding // 2)
+            elif side_padding == 0:
+                side_padding = (0, 0)
+            else:
+                side_padding = (side_padding // 2, side_padding // 2 + 1)
+
+            np.pad(results["img"], ((top_padding, 0), side_padding, (0, 0)), 'constant', constant_values=0)
+            np.pad(results["depth_gt"], ((top_padding, 0), side_padding), 'constant', constant_values=0)
+            if results.get("mask", None) is not None:
+                np.pad(results["mask"], ((top_padding, 0), side_padding), 'constant', constant_values=0)
+
+            results["img_shape"] = results["img"].shape
+            height = results["img_shape"][0]
+            width = results["img_shape"][1]
+            top_margin = int(height - self.height)
+            left_margin = int((width - self.width) / 2)
+
+
         if self.depth:
             depth_cropped = results["depth_gt"][top_margin:top_margin +
                                                 self.height,
@@ -122,6 +145,13 @@ class KBCrop(object):
                                                 self.width]
             results["depth_gt"] = depth_cropped
             results["depth_shape"] = results["depth_gt"].shape
+
+        if results.get("mask", None) is not None:
+            mask_cropped = results["mask"][top_margin:top_margin +
+                                                self.height,
+                                                left_margin:left_margin +
+                                                self.width]
+            results["mask"] = mask_cropped
 
         img_cropped = results["img"][top_margin:top_margin + self.height,
                                      left_margin:left_margin + self.width, :]
@@ -203,6 +233,15 @@ class RandomRotate(object):
                     center=self.center,
                     auto_bound=self.auto_bound,
                     interpolation='nearest')
+            
+            if results.get("mask", None) is not None:
+                results["mask"] = mmcv.imrotate(
+                    results["mask"],
+                    angle=degree,
+                    border_value=0,
+                    center=self.center,
+                    auto_bound=self.auto_bound,
+                    interpolation='nearest')
 
         return results
 
@@ -265,6 +304,10 @@ class RandomFlip(object):
                 # use copy() to make numpy stride positive
                 results[key] = mmcv.imflip(
                     results[key], direction=results['flip_direction']).copy()
+                
+            if results.get("mask", None) is not None:
+                results["mask"] = mmcv.imflip(results["mask"], 
+                                              direction=results['flip_direction'])
 
         return results
 
@@ -325,6 +368,9 @@ class RandomCrop(object):
             results[key] = self.crop(results[key], crop_bbox)
             
         results["depth_shape"] = img_shape
+
+        if results.get("mask", None) is not None:
+            results["mask"] = self.crop(results["mask"], crop_bbox)
 
         return results
 
