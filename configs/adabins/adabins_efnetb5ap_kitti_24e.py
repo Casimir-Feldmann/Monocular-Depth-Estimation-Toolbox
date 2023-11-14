@@ -16,7 +16,7 @@ find_unused_parameters=True
 SyncBN=True
 
 # optimizer
-max_lr=0.000357
+max_lr=0.000357 * 0.5
 optimizer = dict(
     type='AdamW', 
     lr=max_lr, 
@@ -42,3 +42,4 @@ momentum_config = dict(
 # runtime
 optimizer_config = dict(grad_clip=dict(max_norm=0.1, norm_type=2))
 evaluation = dict(interval=1)
+runner = dict(type='EpochBasedRunner', max_epochs=24 * 2)
