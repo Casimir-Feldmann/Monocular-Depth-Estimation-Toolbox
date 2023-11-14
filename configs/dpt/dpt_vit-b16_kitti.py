@@ -15,7 +15,7 @@ model = dict(
 
 # AdamW optimizer, no weight decay for position embedding & layer norm
 # in backbone
-max_lr=1e-4
+max_lr=1e-4 * 0.25
 optimizer = dict(
     _delete_=True,
     type='AdamW',
@@ -40,8 +40,14 @@ lr_config = dict(
 momentum_config = dict(
     policy='OneCycle'
 )
+runner = dict(type='EpochBasedRunner', max_epochs=24 * 4)
 
-evaluation = dict(interval=1)
+evaluation = dict(interval=1,
+                  pre_eval=True, 
+                  rule='less', 
+                  save_best='abs_rel',
+                  greater_keys=("a1", "a2", "a3"), 
+                  less_keys=("abs_rel", "rmse"))
 
 # dataset settings
 dataset_type_train = 'KITTIDataset'
