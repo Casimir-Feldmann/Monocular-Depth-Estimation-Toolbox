@@ -200,6 +200,18 @@ class NYUDataset(Dataset):
             depth_map = img_info['ann']['depth_map']
             depth_map_gt = np.asarray(Image.open(depth_map), dtype=np.float32) / self.depth_scale
             yield depth_map_gt
+    
+    def get_gt_depth_map(self, path):
+        depth_map_gt = np.asarray(Image.open(path), dtype=np.float32) / self.depth_scale
+        depth_map_gt = self.eval_kb_crop(depth_map_gt)
+        return depth_map_gt
+    
+    def is_visualize(self, identifier):
+        return True
+    
+    # Extracts a "unique identifier" of an img in the dataset using its path
+    def get_unique_identifier(self, path):
+        return None # TODO
 
     def eval_mask(self, depth_gt):
         depth_gt = np.squeeze(depth_gt)
@@ -238,6 +250,8 @@ class NYUDataset(Dataset):
 
         pre_eval_results = []
         pre_eval_preds = []
+        pre_eval_gts = []
+        pre_eval_masks = []
 
         for i, (pred, index) in enumerate(zip(preds, indices)):
             depth_map = self.img_infos[index]['ann']['depth_map']
@@ -246,6 +260,9 @@ class NYUDataset(Dataset):
             depth_map_gt = np.expand_dims(depth_map_gt, axis=0)
             # depth_map_gt = self.eval_nyu_crop(depth_map_gt)
             valid_mask = self.eval_mask(depth_map_gt)
+
+            pre_eval_gts.append(depth_map_gt)
+            pre_eval_masks.append(valid_mask)
             
             eval = metrics(depth_map_gt[valid_mask], pred[valid_mask], self.min_depth, self.max_depth)
             pre_eval_results.append(eval)
