@@ -75,11 +75,11 @@ data = dict(
         data_root=data_root,
         img_dir='rgb_images',
         ann_dir='depth_mde',
-        depth_scale=255,
-        split='/cluster/project/infk/courses/252-0579-00L/group26/sniall/Monocular-Depth-Estimation-Toolbox/splits/waymo_angled_test_files_with_gt.txt',
+        depth_scale=256,
+        split='/cluster/project/infk/courses/252-0579-00L/group26/sniall/Monocular-Depth-Estimation-Toolbox/splits/kitti_eigen_test.txt',
         pipeline=test_pipeline,
-        garg_crop=False,
+        garg_crop=True,
         eigen_crop=False,
         min_depth=1e-3,
-        max_depth=80))
-
+        max_depth=80),
+)
