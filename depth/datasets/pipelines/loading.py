@@ -145,8 +145,11 @@ class MaskLoadAnnotations(object):
             mask = np.asarray(Image.open(filename), dtype=np.float32)
         else:
             mask = np.ones((results['depth_ori_shape'][0], results['depth_ori_shape'][1]), dtype=np.float32) * 255
-
+        # print(mask.shape)
+        
         results['mask'] = mask
+
+        results['mask_fields'].append('mask') 
 
         return results
 

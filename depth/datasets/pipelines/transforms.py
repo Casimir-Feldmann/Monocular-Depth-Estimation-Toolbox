@@ -126,11 +126,11 @@ class KBCrop(object):
             else:
                 side_padding = (side_padding // 2, side_padding // 2 + 1)
 
-            np.pad(results["img"], ((top_padding, 0), side_padding, (0, 0)), 'constant', constant_values=0)
-            np.pad(results["depth_gt"], ((top_padding, 0), side_padding), 'constant', constant_values=0)
+            results["img"] = np.pad(results["img"], ((top_padding, 0), side_padding, (0, 0)), 'constant', constant_values=0)
+            results["depth_gt"] = np.pad(results["depth_gt"], ((top_padding, 0), side_padding), 'constant', constant_values=0)
             if results.get("mask", None) is not None:
-                np.pad(results["mask"], ((top_padding, 0), side_padding), 'constant', constant_values=0)
-
+                results["mask"] = np.pad(results["mask"], ((top_padding, 0), side_padding), 'constant', constant_values=0)
+            
             results["img_shape"] = results["img"].shape
             height = results["img_shape"][0]
             width = results["img_shape"][1]
@@ -234,14 +234,25 @@ class RandomRotate(object):
                     auto_bound=self.auto_bound,
                     interpolation='nearest')
             
-            if results.get("mask", None) is not None:
-                results["mask"] = mmcv.imrotate(
-                    results["mask"],
+            for key in results.get('mask_fields', []):
+                results[key] = mmcv.imrotate(
+                    results[key],
                     angle=degree,
-                    border_value=0,
+                    border_value=0.0,
                     center=self.center,
                     auto_bound=self.auto_bound,
                     interpolation='nearest')
+            # if results.get("mask", None) is not None:
+                
+            #     print("mmcv", results["mask"].shape, results["mask"].dtype)
+
+            #     results["mask"] = mmcv.imrotate(
+            #         results["mask"].copy(),
+            #         angle=degree,
+            #         border_value=0.0,
+            #         center=self.center,
+            #         auto_bound=self.auto_bound,
+            #         interpolation='nearest')
 
         return results
 
@@ -305,9 +316,14 @@ class RandomFlip(object):
                 results[key] = mmcv.imflip(
                     results[key], direction=results['flip_direction']).copy()
                 
-            if results.get("mask", None) is not None:
-                results["mask"] = mmcv.imflip(results["mask"], 
-                                              direction=results['flip_direction'])
+            # flip mask
+            for key in results.get('mask_fields', []):
+                # use copy() to make numpy stride positive
+                results[key] = mmcv.imflip(
+                    results[key], direction=results['flip_direction']).copy()
+            # if results.get("mask", None) is not None:
+            #     results["mask"] = mmcv.imflip(results["mask"], 
+            #                                   direction=results['flip_direction']).copy()
 
         return results
 
@@ -369,8 +385,12 @@ class RandomCrop(object):
             
         results["depth_shape"] = img_shape
 
-        if results.get("mask", None) is not None:
-            results["mask"] = self.crop(results["mask"], crop_bbox)
+        # crop mask
+        for key in results.get('mask_fields', []):
+            results[key] = self.crop(results[key], crop_bbox)
+
+        # if results.get("mask", None) is not None:
+        #     results["mask"] = self.crop(results["mask"], crop_bbox)
 
         return results
 

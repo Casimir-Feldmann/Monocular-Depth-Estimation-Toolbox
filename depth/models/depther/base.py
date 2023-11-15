@@ -49,7 +49,7 @@ class BaseDepther(BaseModule, metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def forward_train(self, imgs, img_metas, **kwargs):
+    def forward_train(self, imgs, img_metas, mask=None, **kwargs):
         """Placeholder for Forward function for training."""
         pass
 
@@ -97,7 +97,7 @@ class BaseDepther(BaseModule, metaclass=ABCMeta):
             return self.aug_test(imgs, img_metas, **kwargs)
 
     @auto_fp16(apply_to=('img', ))
-    def forward(self, img, img_metas, return_loss=True, **kwargs):
+    def forward(self, img, img_metas, return_loss=True, mask=None, **kwargs):
         """Calls either :func:`forward_train` or :func:`forward_test` depending
         on whether ``return_loss`` is ``True``.
 
@@ -108,7 +108,7 @@ class BaseDepther(BaseModule, metaclass=ABCMeta):
         the outer list indicating test time augmentations.
         """
         if return_loss:
-            return self.forward_train(img, img_metas, **kwargs)
+            return self.forward_train(img, img_metas, mask=mask, **kwargs)
         else:
             return self.forward_test(img, img_metas, **kwargs)
 

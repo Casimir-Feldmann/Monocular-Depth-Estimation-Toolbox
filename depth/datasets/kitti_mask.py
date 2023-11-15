@@ -161,6 +161,7 @@ class KITTIDataset_Mask(Dataset):
     def pre_pipeline(self, results):
         """Prepare results dict for pipeline."""
         results['depth_fields'] = []
+        results['mask_fields'] = []
         results['img_prefix'] = self.img_dir
         results['depth_prefix'] = self.ann_dir
         results['depth_scale'] = self.depth_scale

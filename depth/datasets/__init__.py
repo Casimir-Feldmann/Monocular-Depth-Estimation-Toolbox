@@ -1,5 +1,6 @@
 # Copyright (c) OpenMMLab. All rights reserved.
 from .kitti import KITTIDataset
+from .kitti_mask import KITTIDataset_Mask
 from .waymo import WaymoDataset
 from .nyu import NYUDataset
 from .sunrgbd import SUNRGBDDataset
