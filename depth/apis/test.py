@@ -116,9 +116,6 @@ def single_gpu_test(model,
             assert len(imgs) == len(img_metas)
 
             for img, img_meta, gt_depth, mask in zip(imgs, img_metas, gt_depths, gt_masks):
-                if not dataset.is_visualize(dataset.get_unique_identifier(img_meta['ori_filename'])):
-                    continue
-
                 h, w, _ = img_meta['img_shape']
                 img_show = img[:h, :w, :]
 
