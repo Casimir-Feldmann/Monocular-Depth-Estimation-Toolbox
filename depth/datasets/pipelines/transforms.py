@@ -115,6 +115,29 @@ class KBCrop(object):
         top_margin = int(height - self.height)
         left_margin = int((width - self.width) / 2)
 
+        # Images from the interpolated post-sweep renders had wrong dims
+        if top_margin < 0 or left_margin < 0:
+            top_padding = max(0, -top_margin)
+            side_padding = max(0, -(width - self.width))
+            if side_padding % 2 == 0 and side_padding != 0:
+                side_padding = (side_padding // 2, side_padding // 2)
+            elif side_padding == 0:
+                side_padding = (0, 0)
+            else:
+                side_padding = (side_padding // 2, side_padding // 2 + 1)
+
+            results["img"] = np.pad(results["img"], ((top_padding, 0), side_padding, (0, 0)), 'constant', constant_values=0)
+            results["depth_gt"] = np.pad(results["depth_gt"], ((top_padding, 0), side_padding), 'constant', constant_values=0)
+            if results.get("mask", None) is not None:
+                results["mask"] = np.pad(results["mask"], ((top_padding, 0), side_padding), 'constant', constant_values=0)
+            
+            results["img_shape"] = results["img"].shape
+            height = results["img_shape"][0]
+            width = results["img_shape"][1]
+            top_margin = int(height - self.height)
+            left_margin = int((width - self.width) / 2)
+
+
         if self.depth:
             depth_cropped = results["depth_gt"][top_margin:top_margin +
                                                 self.height,
@@ -122,6 +145,13 @@ class KBCrop(object):
                                                 self.width]
             results["depth_gt"] = depth_cropped
             results["depth_shape"] = results["depth_gt"].shape
+
+        if results.get("mask", None) is not None:
+            mask_cropped = results["mask"][top_margin:top_margin +
+                                                self.height,
+                                                left_margin:left_margin +
+                                                self.width]
+            results["mask"] = mask_cropped
 
         img_cropped = results["img"][top_margin:top_margin + self.height,
                                      left_margin:left_margin + self.width, :]
