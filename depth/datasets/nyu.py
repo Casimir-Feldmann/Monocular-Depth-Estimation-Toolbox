@@ -270,7 +270,7 @@ class NYUDataset(Dataset):
             # save prediction results
             pre_eval_preds.append(pred)
 
-        return pre_eval_results, pre_eval_preds
+        return pre_eval_results, pre_eval_preds, pre_eval_gts, pre_eval_masks
 
     def evaluate(self, results, metric='eigen', logger=None, **kwargs):
         """Evaluate the dataset.
