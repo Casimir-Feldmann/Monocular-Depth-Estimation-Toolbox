@@ -2,7 +2,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-# from pytorch3d.loss import chamfer_distance
+from pytorch3d.loss import chamfer_distance
 from torch.nn.utils.rnn import pad_sequence
 
 from depth.models.builder import LOSSES
@@ -40,13 +40,8 @@ class BinsChamferLoss(nn.Module):
 
     def forward(self,
                 input,
-                target,
-                mask=None):
+                target):
         """Forward function."""
-        
-        if mask is not None:
-            input = input[mask]
-            target = target[mask]
         chamfer_loss = self.bins_chamfer_loss(input, target)
         chamfer_loss = self.loss_weight * chamfer_loss
         return chamfer_loss

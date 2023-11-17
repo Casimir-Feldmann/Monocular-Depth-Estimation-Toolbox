@@ -201,7 +201,7 @@ class AdabinsHead(DenseDepthHead):
 
         losses = dict()
         losses["loss_depth"] = self.loss_decode(depth_pred, depth_gt, mask=mask)
-        losses["loss_chamfer"] = self.loss_chamfer(bin_edges, depth_gt, mask=mask)
+        losses["loss_chamfer"] = self.loss_chamfer(bin_edges, depth_gt)
 
         log_imgs = self.log_images(img[0], depth_pred[0], depth_gt[0], img_metas[0])
         losses.update(**log_imgs)

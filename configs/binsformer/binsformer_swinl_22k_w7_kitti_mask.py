@@ -1,6 +1,6 @@
 _base_ = [
-    '../_base_/models/depthformer_swin.py',
-    '../_base_/default_runtime.py'
+    '../_base_/models/binsformer.py',
+    '../_base_/default_runtime.py', 
 ]
 
 model = dict(
@@ -10,23 +10,69 @@ model = dict(
         depths=[2, 2, 18, 2],
         num_heads=[6, 12, 24, 48],
         window_size=7),
-    neck=dict(
-        type='HAHIHeteroNeck',
-        positional_encoding=dict(
-            type='SinePositionalEncoding', num_feats=256),
-        in_channels=[64, 192, 384, 768, 1536],
-        out_channels=[64, 192, 384, 768, 1536],
-        embedding_dim=512,
-        scales=[1, 1, 1, 1, 1]),
     decode_head=dict(
-        type='DenseDepthHead',
-        act_cfg=dict(type='LeakyReLU', inplace=True),
-        in_channels=[64, 192, 384, 768, 1536],
-        up_sample_channels=[64, 192, 384, 768, 1536],
-        channels=64,
+        type='BinsFormerDecodeHead',
+        classify=False,
+        class_num=25,
+        in_channels=[192, 384, 768, 1536],
+        conv_dim=512,
         min_depth=1e-3,
         max_depth=80,
-    ))
+        n_bins=64,
+        index=[0, 1, 2, 3],
+        trans_index=[1, 2, 3], # select index for cross-att
+        loss_decode=dict(type='SigLoss', valid_mask=True, loss_weight=10),
+        with_loss_chamfer=False, # do not use chamfer loss
+        loss_chamfer=dict(type='BinsChamferLoss', loss_weight=1e-1),
+        norm_cfg=dict(type='BN', requires_grad=True),
+        transformer_encoder=dict( # default settings
+            type='PureMSDEnTransformer',
+            num_feature_levels=3,
+            encoder=dict(
+                type='DetrTransformerEncoder',
+                num_layers=6,
+                transformerlayers=dict(
+                    type='BaseTransformerLayer',
+                    attn_cfgs=dict(
+                        type='MultiScaleDeformableAttention', 
+                        embed_dims=512, 
+                        num_levels=3, 
+                        num_points=8),
+                    ffn_cfgs=dict(
+                        embed_dims=512,
+                        feedforward_channels=1024,
+                        ffn_dropout=0.1,),
+                    # feedforward_channels=1024,
+                    # ffn_dropout=0.1,
+                    operation_order=('self_attn', 'norm', 'ffn', 'norm')))),
+        positional_encoding=dict(
+            type='SinePositionalEncoding', num_feats=256, normalize=True),
+        transformer_decoder=dict(
+            type='PixelTransformerDecoder',
+            return_intermediate=True,
+            num_layers=9,
+            num_feature_levels=3,
+            hidden_dim=512,
+            operation='//',
+            transformerlayers=dict(
+                type='PixelTransformerDecoderLayer',
+                attn_cfgs=dict(
+                    type='MultiheadAttention',
+                    embed_dims=512,
+                    num_heads=8,
+                    dropout=0.0),
+                ffn_cfgs=dict(
+                    feedforward_channels=2048,
+                    ffn_drop=0.0),
+                operation_order=('cross_attn', 'norm', 'self_attn', 'norm', 'ffn', 'norm')))),
+    train_cfg=dict(
+        aux_loss = True,
+        aux_index = [2, 5],
+        aux_weight = [1/4, 1/2]
+    ),
+    test_cfg=dict(mode='whole')
+)
+
 # dataset settings
 dataset_type_train = 'KITTIDataset_Mask'
 dataset_type_val = 'KITTIDataset'
@@ -34,9 +80,7 @@ dataset_type_test = 'WaymoDataset'
 data_root = 'data/kitti'
 img_norm_cfg = dict(
     mean=[123.675, 116.28, 103.53], std=[58.395, 57.12, 57.375], to_rgb=True)
-# img_norm_cfg = dict(
-#     mean=[117.55304001, 122.38308141, 122.51610871], std=[87.48778595, 89.14812147, 89.86554578], to_rgb=True)
-crop_size= (352, 704)
+crop_size= (416, 544)
 train_pipeline = [
     dict(type='LoadImageFromFile'),
     dict(type='DepthLoadAnnotations'),
@@ -53,7 +97,8 @@ train_pipeline = [
          keys=['img', 'depth_gt', 'mask'],
          meta_keys=('filename', 'ori_filename', 'ori_shape',
                     'img_shape', 'pad_shape', 'scale_factor', 
-                    'flip', 'flip_direction', 'img_norm_cfg')),
+                    'flip', 'flip_direction', 'img_norm_cfg',
+                    'cam_intrinsic')),
 ]
 val_pipeline = [
     dict(type='LoadImageFromFile'),
@@ -96,8 +141,8 @@ test_pipeline = [
 ]
 
 data = dict(
-    samples_per_gpu=2, # 2
-    workers_per_gpu=2, # 2
+    samples_per_gpu=2,
+    workers_per_gpu=2,
     train=dict(
         type=dataset_type_train,
         data_root=None,
@@ -150,12 +195,12 @@ optimizer = dict(
         }))
 # learning policy
 lr_config = dict(
-    policy='CosineAnnealing',
-    warmup='linear',
+    policy='OneCycle',
+    max_lr=max_lr,
     warmup_iters=1600 * 8,
-    warmup_ratio=1.0 / 1000,
-    min_lr_ratio=1e-8,
-    by_epoch=False) # test add by_epoch false
+    div_factor=25,
+    final_div_factor=100,
+    by_epoch=False)
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # runtime settings
 runner = dict(type='IterBasedRunner', max_iters=1600 * 24 * 4)
@@ -168,11 +213,15 @@ evaluation = dict(by_epoch=False,
                   save_best='abs_rel',
                   greater_keys=("a1", "a2", "a3"), 
                   less_keys=("abs_rel", "rmse"))
+
 # iter runtime
 log_config = dict(
     _delete_=True,
     interval=50,
     hooks=[
         dict(type='TextLoggerHook', by_epoch=False),
-        dict(type='TensorboardLoggerHook')
+        dict(type='TensorboardLoggerHook') # TensorboardImageLoggerHook
     ])
+
+
+find_unused_parameters=True

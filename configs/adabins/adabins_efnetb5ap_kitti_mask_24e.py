@@ -16,7 +16,7 @@ find_unused_parameters=True
 SyncBN=True
 
 # optimizer
-max_lr=0.000357
+max_lr=0.000357 / 4
 optimizer = dict(
     type='AdamW', 
     lr=max_lr, 

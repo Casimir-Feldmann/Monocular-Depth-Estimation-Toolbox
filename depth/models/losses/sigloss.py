@@ -37,6 +37,11 @@ class SigLoss(nn.Module):
         self.warm_up_counter = 0
 
     def sigloss(self, input, target, mask=None):
+        if mask is not None:
+            if len(mask.shape) == 3:
+                mask = mask.unsqueeze(1)
+                if mask.max() > 2:
+                    mask = (mask > 2).bool()
         if self.valid_mask:
             valid_mask = target > 0
             if self.max_depth is not None:
