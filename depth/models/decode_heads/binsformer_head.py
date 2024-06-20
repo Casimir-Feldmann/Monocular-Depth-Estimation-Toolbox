@@ -339,7 +339,7 @@ class BinsFormerDecodeHead(DepthBaseDecodeHead):
 
         return pred_depths, pred_bins, pred_classes
 
-    def forward_train(self, img, inputs, img_metas, depth_gt, train_cfg, class_label=None):
+    def forward_train(self, img, inputs, img_metas, depth_gt, train_cfg, class_label=None, mask=None):
         losses = dict()
 
         pred_depths, pred_bins, pred_classes = self.forward(inputs)
@@ -350,6 +350,8 @@ class BinsFormerDecodeHead(DepthBaseDecodeHead):
 
             for index, weight in zip(train_cfg["aux_index"], train_cfg["aux_weight"]):
                 depth = pred_depths[index]
+                if mask is not None:
+                    mask_aux = mask[index]
 
                 depth = resize(
                     input=depth,
@@ -359,10 +361,10 @@ class BinsFormerDecodeHead(DepthBaseDecodeHead):
                     warning=False)
                 
                 if self.binsformer is False:
-                    depth_loss = self.loss_decode(depth, depth_gt) * weight
+                    depth_loss = self.loss_decode(depth, depth_gt, mask=aux_mask) * weight
 
                 else:
-                    depth_loss = self.loss_decode(depth, depth_gt) * weight
+                    depth_loss = self.loss_decode(depth, depth_gt, mask=aux_mask) * weight
 
                     if self.classify:
                         cls = pred_classes[index]
@@ -380,7 +382,8 @@ class BinsFormerDecodeHead(DepthBaseDecodeHead):
 
         # main loss
         depth = pred_depths[-1]
-        
+        if mask is not None:
+            main_mask = mask[-1]
         depth = resize(
             input=depth,
             size=depth_gt.shape[2:],
@@ -389,9 +392,9 @@ class BinsFormerDecodeHead(DepthBaseDecodeHead):
             warning=False)
 
         if self.binsformer is False:
-            depth_loss = self.loss_decode(depth, depth_gt)
+            depth_loss = self.loss_decode(depth, depth_gt, mask=main_mask)
         else:
-            depth_loss = self.loss_decode(depth, depth_gt)
+            depth_loss = self.loss_decode(depth, depth_gt, mask=main_mask)
 
             if self.classify:
                 cls = pred_classes[-1]

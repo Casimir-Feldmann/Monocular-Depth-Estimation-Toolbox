@@ -113,7 +113,7 @@ class DepthBaseDecodeHead(BaseModule, metaclass=ABCMeta):
         """Placeholder of forward function."""
         pass
 
-    def forward_train(self, img, inputs, img_metas, depth_gt, train_cfg):
+    def forward_train(self, img, inputs, img_metas, depth_gt, train_cfg, mask=None):
         """Forward function for training.
         Args:
             inputs (list[Tensor]): List of multi-level img features.
@@ -129,7 +129,7 @@ class DepthBaseDecodeHead(BaseModule, metaclass=ABCMeta):
             dict[str, Tensor]: a dictionary of loss components
         """
         depth_pred = self.forward(inputs, img_metas)
-        losses = self.losses(depth_pred, depth_gt)
+        losses = self.losses(depth_pred, depth_gt, mask=mask)
 
         log_imgs = self.log_images(img[0], depth_pred[0], depth_gt[0], img_metas[0])
         losses.update(**log_imgs)
@@ -184,7 +184,7 @@ class DepthBaseDecodeHead(BaseModule, metaclass=ABCMeta):
         return output
 
     @force_fp32(apply_to=('depth_pred', ))
-    def losses(self, depth_pred, depth_gt):
+    def losses(self, depth_pred, depth_gt, mask=None):
         """Compute depth loss."""
         loss = dict()
         depth_pred = resize(
@@ -193,6 +193,11 @@ class DepthBaseDecodeHead(BaseModule, metaclass=ABCMeta):
             mode='bilinear',
             align_corners=self.align_corners,
             warning=False)
+        if mask is not None:
+            mask /= 255.0
+            mask[mask < 0.5] = 0.2
+            depth_pred = depth_pred * mask
+            depth_gt = depth_gt * mask
         loss['loss_depth'] = self.loss_decode(
             depth_pred,
             depth_gt)

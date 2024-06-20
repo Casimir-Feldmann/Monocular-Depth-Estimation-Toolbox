@@ -71,11 +71,11 @@ class DepthEncoderDecoder(BaseDepther):
                 align_corners=self.align_corners)
         return out
 
-    def _decode_head_forward_train(self, img, x, img_metas, depth_gt, **kwargs):
+    def _decode_head_forward_train(self, img, x, img_metas, depth_gt, mask=None, **kwargs):
         """Run forward function and calculate loss for decode head in
         training."""
         losses = dict()
-        loss_decode = self.decode_head.forward_train(img, x, img_metas, depth_gt, self.train_cfg, **kwargs)
+        loss_decode = self.decode_head.forward_train(img, x, img_metas, depth_gt, self.train_cfg, mask=mask, **kwargs)
         losses.update(add_prefix(loss_decode, 'decode'))
         return losses
 
@@ -91,7 +91,7 @@ class DepthEncoderDecoder(BaseDepther):
 
         return depth
 
-    def forward_train(self, img, img_metas, depth_gt, **kwargs):
+    def forward_train(self, img, img_metas, depth_gt, mask=None, **kwargs):
         """Forward function for training.
 
         Args:
@@ -113,7 +113,7 @@ class DepthEncoderDecoder(BaseDepther):
         losses = dict()
 
         # the last of x saves the info from neck
-        loss_decode = self._decode_head_forward_train(img, x, img_metas, depth_gt, **kwargs)
+        loss_decode = self._decode_head_forward_train(img, x, img_metas, depth_gt, mask=mask, **kwargs)
  
         losses.update(loss_decode)
 

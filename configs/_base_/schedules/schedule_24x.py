@@ -11,6 +11,6 @@ lr_config = dict(
 )
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # runtime settings
-runner = dict(type='EpochBasedRunner', max_epochs=24)
+runner = dict(type='EpochBasedRunner', max_epochs=45)
 checkpoint_config = dict(by_epoch=True, max_keep_ckpts=2, interval=1)
 evaluation = dict(by_epoch=True, interval=6, pre_eval=True)

@@ -190,7 +190,7 @@ class AdabinsHead(DenseDepthHead):
         return output, bin_edges
 
 
-    def forward_train(self, img, inputs, img_metas, depth_gt, train_cfg):
+    def forward_train(self, img, inputs, img_metas, depth_gt, train_cfg, mask=None):
         depth_pred, bin_edges = self.forward(inputs, img_metas)
         depth_pred = resize(
             input=depth_pred,
@@ -200,7 +200,7 @@ class AdabinsHead(DenseDepthHead):
             warning=False)
 
         losses = dict()
-        losses["loss_depth"] = self.loss_decode(depth_pred, depth_gt)
+        losses["loss_depth"] = self.loss_decode(depth_pred, depth_gt, mask=mask)
         losses["loss_chamfer"] = self.loss_chamfer(bin_edges, depth_gt)
 
         log_imgs = self.log_images(img[0], depth_pred[0], depth_gt[0], img_metas[0])

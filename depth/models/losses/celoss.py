@@ -37,10 +37,13 @@ class CrossEntropyLoss(nn.Module):
 
     def forward(self,
                 input,
-                target):
+                target,
+                mask=None):
         """Forward function."""
-
-        loss_ce = F.cross_entropy(input.squeeze(), target)
         acc = self.accuracy(input.squeeze(), target)
+        if mask is not None:
+            input = input[mask]
+            target = target[mask]
+        loss_ce = F.cross_entropy(input.flatten(), target.flatten())
         loss_cls = self.loss_weight * loss_ce
         return loss_cls, acc

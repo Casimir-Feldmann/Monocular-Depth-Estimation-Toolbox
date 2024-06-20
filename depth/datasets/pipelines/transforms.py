@@ -233,6 +233,26 @@ class RandomRotate(object):
                     center=self.center,
                     auto_bound=self.auto_bound,
                     interpolation='nearest')
+            
+            for key in results.get('mask_fields', []):
+                results[key] = mmcv.imrotate(
+                    results[key],
+                    angle=degree,
+                    border_value=0.0,
+                    center=self.center,
+                    auto_bound=self.auto_bound,
+                    interpolation='nearest')
+            # if results.get("mask", None) is not None:
+                
+            #     print("mmcv", results["mask"].shape, results["mask"].dtype)
+
+            #     results["mask"] = mmcv.imrotate(
+            #         results["mask"].copy(),
+            #         angle=degree,
+            #         border_value=0.0,
+            #         center=self.center,
+            #         auto_bound=self.auto_bound,
+            #         interpolation='nearest')
 
         return results
 
@@ -295,6 +315,15 @@ class RandomFlip(object):
                 # use copy() to make numpy stride positive
                 results[key] = mmcv.imflip(
                     results[key], direction=results['flip_direction']).copy()
+                
+            # flip mask
+            for key in results.get('mask_fields', []):
+                # use copy() to make numpy stride positive
+                results[key] = mmcv.imflip(
+                    results[key], direction=results['flip_direction']).copy()
+            # if results.get("mask", None) is not None:
+            #     results["mask"] = mmcv.imflip(results["mask"], 
+            #                                   direction=results['flip_direction']).copy()
 
         return results
 
@@ -355,6 +384,13 @@ class RandomCrop(object):
             results[key] = self.crop(results[key], crop_bbox)
             
         results["depth_shape"] = img_shape
+
+        # crop mask
+        for key in results.get('mask_fields', []):
+            results[key] = self.crop(results[key], crop_bbox)
+
+        # if results.get("mask", None) is not None:
+        #     results["mask"] = self.crop(results["mask"], crop_bbox)
 
         return results
 

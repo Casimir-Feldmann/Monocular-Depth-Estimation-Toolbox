@@ -36,13 +36,23 @@ class SigLoss(nn.Module):
         self.warm_iter = warm_iter
         self.warm_up_counter = 0
 
-    def sigloss(self, input, target):
+    def sigloss(self, input, target, mask=None):
+        if mask is not None:
+            if len(mask.shape) == 3:
+                mask = mask.unsqueeze(1)
+                if mask.max() > 2:
+                    mask = (mask > 2).bool()
         if self.valid_mask:
             valid_mask = target > 0
             if self.max_depth is not None:
                 valid_mask = torch.logical_and(target > 0, target <= self.max_depth)
+            if mask is not None:
+                valid_mask = torch.logical_and(valid_mask, mask)
             input = input[valid_mask]
             target = target[valid_mask]
+        elif mask is not None:
+            input = input[mask]
+            target = target[mask]
         
         if self.warm_up:
             if self.warm_up_counter < self.warm_iter:
@@ -55,8 +65,7 @@ class SigLoss(nn.Module):
         Dg = torch.var(g) + 0.15 * torch.pow(torch.mean(g), 2)
         return torch.sqrt(Dg)
 
-    def forward(self, depth_pred, depth_gt):
+    def forward(self, depth_pred, depth_gt, mask=None):
         """Forward function."""
-        
-        loss_depth = self.loss_weight * self.sigloss(depth_pred, depth_gt)
+        loss_depth = self.loss_weight * self.sigloss(depth_pred, depth_gt, mask=mask)
         return loss_depth

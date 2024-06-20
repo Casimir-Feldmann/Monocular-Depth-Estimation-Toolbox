@@ -104,6 +104,59 @@ class DepthLoadAnnotations(object):
         repr_str = self.__class__.__name__
         repr_str += f"imdecode_backend='{self.imdecode_backend}')"
         return repr_str
+    
+
+@PIPELINES.register_module()
+class MaskLoadAnnotations(object):
+    """Load annotations for depth estimation.
+
+    Args:
+        file_client_args (dict): Arguments to instantiate a FileClient.
+            See :class:`mmcv.fileio.FileClient` for details.
+            Defaults to ``dict(backend='disk')``.
+        imdecode_backend (str): Backend for :func:`mmcv.imdecode`. Default:
+            'pillow'
+    """
+    def __init__(self,
+                 file_client_args=dict(backend='disk'),
+                 imdecode_backend='pillow'):
+        self.file_client_args = file_client_args.copy()
+        self.file_client = None
+        self.imdecode_backend = imdecode_backend
+
+    def __call__(self, results):
+        """Call function to load multiple types annotations.
+
+        Args:
+            results (dict): Result dict from :obj:`depth.CustomDataset`.
+
+        Returns:
+            dict: The dict contains loaded depth estimation annotations.
+        """
+
+        if self.file_client is None:
+            self.file_client = mmcv.FileClient(**self.file_client_args)
+
+        filename = None
+        if results.get('mask_info', None) is not None:
+            filename = results['mask_info']
+
+        if filename is not None:
+            mask = np.asarray(Image.open(filename), dtype=np.float32)
+        else:
+            mask = np.ones((results['depth_ori_shape'][0], results['depth_ori_shape'][1]), dtype=np.float32) * 255
+        # print(mask.shape)
+        
+        results['mask'] = mask
+
+        results['mask_fields'].append('mask') 
+
+        return results
+
+    def __repr__(self):
+        repr_str = self.__class__.__name__
+        repr_str += f"imdecode_backend='{self.imdecode_backend}')"
+        return repr_str
 
 
 @PIPELINES.register_module()
